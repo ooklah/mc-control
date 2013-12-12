@@ -1,10 +1,19 @@
 #!/bin/bash
 # /etc/init.d/minecraft
+# version 0.2.1 2013-12-11
+#	- created reboot def, cleaned up announcement dialog
+#	- added comments
 # version 0.2.2 2013-10-16
 #	- moved prep checks to mc_checkService
 #	- created render function
 # version 0.2.1 2013-10-14
 # version 0.2.0 2013-09-23
+#
+#Requirements
+# screen;
+#
+#Optional
+# minecraft-overviewer
 
 #Settings
 MAP=$2
@@ -20,7 +29,7 @@ DATE=$(date +"%m%d%Y-%H%M")
 INVOKE="java -Xmx1512M -Xms512M -jar $SERVICE nogui"
 LOGFILE="/home/$USER/log/minecraft_$MAP.log"
 USELOGGING=1
-
+RENDER_RESTART=0
 
 if [ -z $MAP ]
 then
@@ -31,7 +40,7 @@ then
 fi
 
 
-#Execute as $USER
+# Execute as $USER
 as_user(){
   if [ $ME == $USER ]; then
    bash -c "$1"
@@ -41,7 +50,7 @@ as_user(){
 }
 
 
-#Because I got tired of writing out the pgrep line for every new method
+# Because I got tired of writing out the pgrep line for every new method
 mc_checkService(){
   if pgrep -u $USER -f $SERVICE > /dev/null
   then
@@ -52,7 +61,7 @@ mc_checkService(){
 }
 
 
-#Run comments through here, will also log if enabled.
+# Run comments through here, will also log if enabled.
 log(){
   echo $1
   if [ $USELOGGING > /dev/null ]
@@ -62,6 +71,7 @@ log(){
 }
 
 
+# Send a message to a specific running server.
 mc_say(){
   if mc_checkService
   then
@@ -76,6 +86,7 @@ mc_say(){
 }
 
 
+# Send a minecraft command to a specific running server.
 mc_command(){
   if mc_checkService
   then
@@ -90,6 +101,7 @@ mc_command(){
 }
 
 
+# Starts a server isntance. Checks to make sure it is not running already
 mc_start(){
   if mc_checkService
   then
@@ -109,6 +121,7 @@ mc_start(){
 }
 
 
+# Announces a server stop is coming and warns at 60,10, and 0 second marks.
 mc_stop(){
   log "STOP: $SERVICE shutdown initiated."
   if mc_checkService
@@ -134,6 +147,7 @@ mc_stop(){
 }
 
 
+# E-stop, stops the server immediately
 mc_estop(){
   if mc_checkService
   then
@@ -148,6 +162,8 @@ mc_estop(){
 }
 
 
+# Render the map using minecraft-overviewer.
+# Requires cleanup.
 mc_render(){
   if mc_checkService
   then
@@ -160,22 +176,23 @@ mc_render(){
     log "Render: $SERVICE is not Running"
   fi
 
-    log "Render: Map Rendering Starting"
-    cd /home/minecraft/overviewer
-    overviewer.py --config=$MAP".py"
+  log "Render: Map Rendering Starting"
+  cd /home/minecraft/overviewer
+  overviewer.py --config=$MAP".py"
 
-    log "Render: Generating Metadata"
-    overviewer.py --genpoi --config=$MAP".py"
+  log "Render: Generating Metadata"
+  overviewer.py --genpoi --config=$MAP".py"
 
-#  if mc_checkService
-#  then
-#    sleep 10
-#    mc_start
-#    log "Render: Restarting Map"
-#   fi
+  if [ RENDER_RESTART > /dev/null ]
+  then
+    sleep 10
+    mc_start
+    log "Render: Restarting Map"
+  fi
 }
 
 
+# Backup a specific world
 mc_backup(){
    if [ -z $MAP ]
    then
@@ -209,6 +226,8 @@ mc_backup(){
    fi
 }
 
+
+# Reboot a specifc server
 mc_reboot(){
   log "Reboot Requested"
   mc_say "Server will be rebooting 60 seconds."
@@ -221,18 +240,22 @@ mc_reboot(){
 }
 
 
+# Used by mc_backup to get a size of the zip backup it just created.
 mc_backupSize(){
   SIZE=`du -ch $BACKUPSPATH/$MAP/$MAP"_"$DATE".zip" | grep total`
   log "Info: Backup Zip is $SIZE"
 }
 
 
+# Get the size of the server folder
 mc_serverSize(){
   SIZE=`du -ch $SERVERPATH/$MAP | grep total`
   log "Info: Server folder is $SIZE"
 }
 
 
+# Shows the last few lines of the server log. 
+# Works with 1.7 or newer
 mc_tail(){
   tail $SERVERPATH/$MAP/logs/latest.log
 }
