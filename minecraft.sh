@@ -1,11 +1,7 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.2.1 2013-12-11
-#	- created reboot def, cleaned up announcement dialog
-#	- added comments
 # version 0.2.2 2013-10-16
-#	- moved prep checks to mc_checkService
-#	- created render function
 # version 0.2.1 2013-10-14
 # version 0.2.0 2013-09-23
 #
@@ -18,26 +14,23 @@
 #Settings
 MAP=$2
 
-SERVICE=$MAP"_server.jar"
-SCREEN=$MAP"_screen"
+#Edit Variables
 USER="minecraft"
-ME=`whoami`
-SERVERPATH="/home/minecraft"
-BACKUPSPATH="/home/$USER/backups"
-DONOTARCHIVE="*.jar"
-DATE=$(date +"%m%d%Y-%H%M")
-INVOKE="java -Xmx1512M -Xms512M -jar $SERVICE nogui"
-LOGFILE="/home/$USER/log/minecraft_$MAP.log"
 USELOGGING=1
 RENDER_RESTART=0
 
-if [ -z $MAP ]
-then
-  echo "Please specify a map after your command"
-  echo "Example: minecraft backup <Map>"
-  echo "Example: minecraft say|command <Map> \"Text\""
-  exit 2
-fi
+#Path Variables
+SERVERPATH="/home/$USER"
+BACKUPSPATH="$SERVERPATH/backups"
+LOGFILE="$SERVERPATH/log/minecraft_$MAP.log"
+
+#Variables
+SERVICE=$MAP"_server.jar"
+SCREEN=$MAP"_screen"
+ME=`whoami`
+DONOTARCHIVE="*.jar"
+DATE=$(date +"%m%d%Y-%H%M")
+INVOKE="java -Xmx1512M -Xms512M -jar $SERVICE nogui"
 
 
 # Execute as $USER
@@ -49,6 +42,14 @@ as_user(){
   fi
 }
 
+mc_checkMap(){
+  if [ -z $MAP ]
+  then
+    echo "A server wasn't specified, Please tell me which server to act on"
+    echo "ex: minecraft start Homeworld"
+    exit 2
+  fi
+}
 
 # Because I got tired of writing out the pgrep line for every new method
 mc_checkService(){
@@ -73,6 +74,7 @@ log(){
 
 # Send a message to a specific running server.
 mc_say(){
+  mc_checkMap
   if mc_checkService
   then
     pre_log_len=`wc -l "$SERVERPATH/$MAP/logs/latest.log" | awk '{print $1}'`
@@ -88,6 +90,7 @@ mc_say(){
 
 # Send a minecraft command to a specific running server.
 mc_command(){
+  mc_checkMap
   if mc_checkService
   then
     pre_log_len=`wc -l "$SERVERPATH/$MAP/logs/latest.log" | awk '{print $1}'`
@@ -103,6 +106,7 @@ mc_command(){
 
 # Starts a server isntance. Checks to make sure it is not running already
 mc_start(){
+  mc_checkMap
   if mc_checkService
   then
     log "START: Error! $SERVICE is already running!"
@@ -123,6 +127,7 @@ mc_start(){
 
 # Announces a server stop is coming and warns at 60,10, and 0 second marks.
 mc_stop(){
+  mc_checkMap
   log "STOP: $SERVICE shutdown initiated."
   if mc_checkService
   then
@@ -149,6 +154,7 @@ mc_stop(){
 
 # E-stop, stops the server immediately
 mc_estop(){
+  mc_checkMap
   if mc_checkService
   then
     log  "E-STOP $SERVICE"
@@ -165,6 +171,7 @@ mc_estop(){
 # Render the map using minecraft-overviewer.
 # Requires cleanup.
 mc_render(){
+  mc_checkMap
   if mc_checkService
   then
     log "Render: Starting Render Process"
@@ -194,41 +201,37 @@ mc_render(){
 
 # Backup a specific world
 mc_backup(){
-   if [ -z $MAP ]
-   then
-     log "Backup: Please specify a map to backup"
-     exit 1
-   else
-     echo "Backup: World $MAP Beginning"
+  mc_checkMap
+  log "Backup: World $MAP Beginning"
 
-     if mc_checkService
-     then
-       mc_say "World Backup Started..."
-       mc_command "save-off"
-       mc_command "save-all"
-       sleep 5
-     fi
+  if mc_checkService
+  then
+    mc_say "World Backup Started..."
+    mc_command "save-off"
+    mc_command "save-all"
+    sleep 5
+  fi
 
-     cd $SERVERPATH/$MAP
-     SAVE=`ls -d */`
-     cd $SERVERPATH
-     log "Backup: Beginning Zip Backup"
-     log "Backup: Path is ""$BACKUPSPATH/$MAP/$MAP""_""$DATE"
-     zip -9 -r $BACKUPSPATH/$MAP/$MAP"_"$DATE $MAP -x $DONOTARCHIVE
+  cd $SERVERPATH/$MAP
+  SAVE=`ls -d */`
+  cd $SERVERPATH
+  log "Backup: Beginning Zip Backup"
+  log "Backup: Path is ""$BACKUPSPATH/$MAP/$MAP""_""$DATE"
+  zip -9 -r $BACKUPSPATH/$MAP/$MAP"_"$DATE $MAP -x $DONOTARCHIVE
 
-     if mc_checkService
-     then
-       mc_command "save-on"
-       mc_say "World Backup Complete."
-     fi
+  if mc_checkService
+  then
+    mc_command "save-on"
+    mc_say "World Backup Complete."
+  fi
 
-     log "Backup: Zip Finished"
-   fi
+  log "Backup: Zip Finished"
 }
 
 
 # Reboot a specifc server
 mc_reboot(){
+  mc_checkMap
   log "Reboot Requested"
   mc_say "Server will be rebooting 60 seconds."
   sleep 60
@@ -249,6 +252,7 @@ mc_backupSize(){
 
 # Get the size of the server folder
 mc_serverSize(){
+  mc_checkMap
   SIZE=`du -ch $SERVERPATH/$MAP | grep total`
   log "Info: Server folder is $SIZE"
 }
@@ -257,11 +261,12 @@ mc_serverSize(){
 # Shows the last few lines of the server log. 
 # Works with 1.7 or newer
 mc_tail(){
+  mc_checkMap
   tail $SERVERPATH/$MAP/logs/latest.log
 }
 
 #Top Message, which server map we are working on.
-echo  "Minecraft Server MAP->"$MAP
+echo  "Minecraft Server MAP -> "$MAP
 
 #Start-Stop here
 case "$1" in
@@ -298,7 +303,7 @@ case "$1" in
    mc_say "$3"
    ;;
  *)
-  echo "Usage: minecraft {backup|start|stop|reboot|render [Server] say|command [Server] 'command'}"
+  echo "Usage: minecraft {backup|start|stop|estop|tail|reboot|render [Server]} {say|command [Server] 'command or dialog'}"
   exit 1
   ;;
 
