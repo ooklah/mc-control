@@ -21,6 +21,7 @@ INVOKE="java -Xmx1512M -Xms512M -jar $SERVICE nogui"
 LOGFILE="/home/$USER/log/minecraft_$MAP.log"
 USELOGGING=1
 
+
 if [ -z $MAP ]
 then
   echo "Please specify a map after your command"
@@ -39,6 +40,7 @@ as_user(){
   fi
 }
 
+
 #Because I got tired of writing out the pgrep line for every new method
 mc_checkService(){
   if pgrep -u $USER -f $SERVICE > /dev/null
@@ -49,6 +51,7 @@ mc_checkService(){
   fi
 }
 
+
 #Run comments through here, will also log if enabled.
 log(){
   echo $1
@@ -57,6 +60,7 @@ log(){
    echo $(date +"%m-%d-%Y %H:%M:%S") " $1" >> $LOGFILE
   fi
 }
+
 
 mc_say(){
   if mc_checkService
@@ -71,6 +75,7 @@ mc_say(){
   fi
 }
 
+
 mc_command(){
   if mc_checkService
   then
@@ -83,6 +88,7 @@ mc_command(){
    log  "Command: $SERVICE is not running"
   fi
 }
+
 
 mc_start(){
   if mc_checkService
@@ -102,15 +108,16 @@ mc_start(){
   fi
 }
 
+
 mc_stop(){
+  log "STOP: $SERVICE shutdown initiated."
   if mc_checkService
   then
-    log "STOP: $SERVICE Shutdown initiated."
-    mc_say "Clocktower Announcement: Server is Shutting down in 60 seconds!"
+    mc_say "Server is shutting down in 60 seconds. Please exit in a safe place!"
     sleep 50
-    mc_say "Clocktower Announcement: SERVER SHUTTING DOWN IN 10 SECONDS."
+    mc_say "Server is shutting down in 10 seconds."
     sleep 10
-    mc_say "Clocktower Announcement: SHUTTING DOWN!"
+    mc_say "Server is now shutting down!"
     mc_command "save-all"
     sleep 5
     mc_command "stop"
@@ -126,12 +133,13 @@ mc_stop(){
   fi
 }
 
+
 mc_estop(){
   if mc_checkService
   then
     log  "E-STOP $SERVICE"
-    mc_say "SHUTTING DOWN IN 10 SECONDS"
-    sleep 10
+    mc_say "Server is Shutting Down Immediately!"
+    sleep 5
     mc_command "save-all"
     sleep 5
     mc_command "stop"
@@ -178,7 +186,7 @@ mc_backup(){
 
      if mc_checkService
      then
-       mc_say "Clocktower Announcement: World Backup Started..."
+       mc_say "World Backup Started..."
        mc_command "save-off"
        mc_command "save-all"
        sleep 5
@@ -194,11 +202,22 @@ mc_backup(){
      if mc_checkService
      then
        mc_command "save-on"
-       mc_say "Clocktower Announcement: World Backup Complete."
+       mc_say "World Backup Complete."
      fi
 
      log "Backup: Zip Finished"
    fi
+}
+
+mc_reboot(){
+  log "Reboot Requested"
+  mc_say "Server will be rebooting 60 seconds."
+  sleep 60
+  mc_say "Server is now rebooting."
+  mc_estop
+  sleep 10
+  mc_start
+  log "Reboot finished."
 }
 
 
@@ -246,14 +265,8 @@ case "$1" in
     mc_estop
     ;;
   reboot)
-   log "Reboot: Initiated"
-   mc_say "Clocktower Announcement: The server is going to reboot."
-   mc_say "=== Server should be back online 30 seconds after stop. ==="
-   mc_estop
-   sleep 10
-   mc_start
-   log "Reboot: Finished"
-   ;;
+    mc_reboot
+    ;;
   command);&
   -co)
     mc_command "$3"
