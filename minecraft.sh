@@ -29,7 +29,7 @@ SERVICE=$MAP"_server.jar"
 SCREEN=$MAP"_screen"
 ME=`whoami`
 DONOTARCHIVE="*.jar"
-DATE=$(date +"%m%d%Y-%H%M")
+DATE=$(date +"%Y%m%d-%H%M")
 INVOKE="java -Xmx1512M -Xms512M -jar $SERVICE nogui"
 
 
@@ -190,7 +190,7 @@ mc_render(){
   log "Render: Generating Metadata"
   overviewer.py --genpoi --config=$MAP".py"
 
-  if [ RENDER_RESTART > /dev/null ]
+  if [ RENDER_RESTART == 1 ]
   then
     sleep 10
     mc_start
@@ -212,12 +212,14 @@ mc_backup(){
     sleep 5
   fi
 
-  cd $SERVERPATH/$MAP
-  SAVE=`ls -d */`
+  #cd $SERVERPATH/$MAP
+  #SAVE=`ls -d */`
   cd $SERVERPATH
   log "Backup: Beginning Zip Backup"
   log "Backup: Path is ""$BACKUPSPATH/$MAP/$MAP""_""$DATE"
-  zip -9 -r $BACKUPSPATH/$MAP/$MAP"_"$DATE $MAP -x $DONOTARCHIVE
+  # -x \*.jar works instead of -x \$DONOTARCHIVE or -x $DONOTARCHIVE="\*.jar"
+  # I do not know why
+  zip -9 -r $BACKUPSPATH/$MAP/$MAP"_"$DATE $MAP -x \*.jar
 
   if mc_checkService
   then
