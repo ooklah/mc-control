@@ -1,4 +1,4 @@
-mc-control
+mc-tools
 ==========
 
-Minecraft Related
+Gerneral tools to interact with minecraft.
