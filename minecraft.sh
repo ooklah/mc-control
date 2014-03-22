@@ -18,10 +18,12 @@ USER="simple"
 USELOGGING=1
 
 #Path Variables
-SERVERPATH="/home/$USER/worlds"
-BACKUPSPATH="/home/$USER/www/minecraft/$MAP/backups"
-LOGFILE="/home/$USER/logs/minecraft_$MAP.log"
-MAPSPATH="/home/$USER/maps"
+ROOT="/home/$USER/mc"
+SERVERPATH="$ROOT/worlds"
+WEBPATH="$ROOT/www/minecraft"
+BACKUPSPATH="$WEBPATH/$MAP/backups"
+LOGFILE="$ROOT/logs/minecraft_$MAP.log"
+MAPSPATH="$ROOT/$USER/maps"
 
 #Variables
 SERVICE=$MAP"_server.jar"
