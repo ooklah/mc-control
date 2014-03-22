@@ -1,19 +1,21 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 #
+# Works with minecraft 1.7 or newer
+# 1.6.x and lower use different logging methods.
+#
 #Requirements
 # screen;
 #
 #Optional
-# minecraft-overviewer
+# minecraft-overviewer: http://overviewer.org/
 
-#Settings
+#Gets the map name immediately.
 MAP=$2
 
 #Edit Variables
-USER="minecraft"
+USER="simple"
 USELOGGING=1
-RENDER_RESTART=0
 
 #Path Variables
 SERVERPATH="/home/$USER/worlds"
@@ -39,6 +41,7 @@ as_user(){
   fi
 }
 
+# Check if map variable exists, exit with message otherwise.
 mc_checkMap(){
   if [ -z $MAP ]
   then
@@ -48,7 +51,7 @@ mc_checkMap(){
   fi
 }
 
-# Because I got tired of writing out the pgrep line for every new method
+# Check to see if the current given server is already running.
 mc_checkService(){
   if pgrep -u $USER -f $SERVICE > /dev/null
   then
@@ -59,7 +62,7 @@ mc_checkService(){
 }
 
 
-# Run comments through here, will also log if enabled.
+# All commands and dialog passes through here for logging.
 log(){
   echo $1
   if [ $USELOGGING > /dev/null ]
@@ -85,7 +88,7 @@ mc_say(){
 }
 
 
-# Send a minecraft command to a specific running server.
+# Send a command to a specific running server.
 mc_command(){
   mc_checkMap
   if mc_checkService
@@ -101,7 +104,7 @@ mc_command(){
 }
 
 
-# Starts a server isntance. Checks to make sure it is not running already
+# Starts a server instance. Checks to make sure it is not running already
 mc_start(){
   mc_checkMap
   if mc_checkService
@@ -122,7 +125,7 @@ mc_start(){
 }
 
 
-# Announces a server stop is coming and warns at 60,10, and 0 second marks.
+# Announces a server stop is coming and warns at 60, 10, and 0 second marks.
 mc_stop(){
   mc_checkMap
   log "STOP: $SERVICE shutdown initiated."
@@ -166,7 +169,6 @@ mc_estop(){
 
 
 # Render the map using minecraft-overviewer.
-# Requires cleanup.
 mc_render(){
   mc_checkMap
   if mc_checkService
@@ -201,12 +203,10 @@ mc_backup(){
     sleep 5
   fi
 
-  #cd $SERVERPATH/$MAP
-  #SAVE=`ls -d */`
   cd $SERVERPATH
   log "Backup: Beginning Zip Backup"
-  # -x \*.jar works instead of -x \$DONOTARCHIVE or -x $DONOTARCHIVE="\*.jar"
-  # I do not know why
+  # -x \*.jar works 
+  # instead of -x \$DONOTARCHIVE or -x $DONOTARCHIVE="\*.jar"
   zip -9 -r $BACKUPSPATH/$MAP"_"$DATE $MAP -x \*.jar
 
   if mc_checkService
@@ -215,28 +215,28 @@ mc_backup(){
     mc_say "World Backup Complete."
   fi
   log "Backup: Path is ""$BACKUPSPATH/$MAP""_""$DATE"
-  log "Backup: Zip Finished"
+  log "Backup: Zip finished."
 }
 
 
-# Reboot a specifc server
-mc_reboot(){
+# Restart a specifc server
+mc_restart(){
   mc_checkMap
-  log "Reboot Requested"
-  mc_say "Server will be rebooting 60 seconds."
+  log "Restart Requested"
+  mc_say "Server will be restarting 60 seconds."
   sleep 60
-  mc_say "Server is now rebooting."
+  mc_say "Server is now restarting."
   mc_estop
   sleep 10
   mc_start
-  log "Reboot finished."
+  log "Restart finished."
 }
 
 
 # Used by mc_backup to get a size of the zip backup it just created.
 mc_backupSize(){
   SIZE=`du -ch $BACKUPSPATH/$MAP"_"$DATE".zip" | grep total`
-  log "Info: Backup Zip is $SIZE"
+  log "Info: Backup zip is $SIZE"
 }
 
 
@@ -282,8 +282,9 @@ case "$1" in
   estop)
     mc_estop
     ;;
-  reboot)
-    mc_reboot
+  restart);&
+  -r)
+    mc_restart
     ;;
   command);&
   -co)
@@ -293,7 +294,9 @@ case "$1" in
    mc_say "$3"
    ;;
  *)
-  echo "Usage: minecraft {backup|start|stop|estop|tail|reboot|render [Server]} {say|command [Server] 'command or dialog'}"
+  echo "Usage:"
+  echo "minecraft {backup|start|stop|estop|restart|tail|render [Server]}"
+  echo "minecraft {say|command [Server] 'command'}"
   exit 1
   ;;
 
