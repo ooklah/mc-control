@@ -14,11 +14,11 @@
 MAP=$2
 
 #Edit Variables
-USER="simple"
+USER="minecraft"
 USELOGGING=1
 
 #Path Variables
-ROOT="/home/$USER/mc"
+ROOT="/home/$USER"
 SERVERPATH="$ROOT/worlds"
 WEBROOT="$ROOT/www/minecraft"
 BACKUPSPATH="$WEBROOT/$MAP/backups"
