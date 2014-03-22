@@ -20,10 +20,11 @@ USELOGGING=1
 #Path Variables
 ROOT="/home/$USER/mc"
 SERVERPATH="$ROOT/worlds"
-WEBPATH="$ROOT/www/minecraft"
-BACKUPSPATH="$WEBPATH/$MAP/backups"
+WEBROOT="$ROOT/www/minecraft"
+BACKUPSPATH="$WEBROOT/$MAP/backups"
+LOGROOT="$ROOT/logs"
 LOGFILE="$ROOT/logs/minecraft_$MAP.log"
-MAPSPATH="$ROOT/$USER/maps"
+MAPSPATH="$ROOT/maps"
 
 #Variables
 SERVICE=$MAP"_server.jar"
@@ -257,6 +258,34 @@ mc_tail(){
   tail $SERVERPATH/$MAP/logs/latest.log
 }
 
+#Create a new server to run
+mc_create(){
+  # Check for already created map by the current name
+  if [ -d $SERVERPATH/$MAP ]; then
+    echo "There is already a $MAP world created."
+    exit 3
+  fi
+  
+  # Check if there is a log directory, create it otherwise
+  if [ ! -d $LOGROOT ]; then
+    mkdir -p $LOGROOT
+  fi
+  
+  # Check for the map render directory
+  if [ ! -d $MAPSPATH ]; then
+    mkdir -p $MAPSPATH
+  fi
+  
+  # Check if webroot exists, create it otherwise (if possible)
+  if [ ! -d $WEBROOT ]; then
+    mkdir -p $WEBROOT
+  fi
+  
+  log "Creating New world: $MAP"
+  mkdir -p {$SERVERPATH/$MAP,$BACKUPSPATH,$WEBROOT/$MAP/map} 
+}
+
+
 #Top Message, which server map we are working on.
 echo  "Minecraft Server MAP -> "$MAP
 
@@ -293,8 +322,11 @@ case "$1" in
     mc_command "$3"
     ;;
   say)
-   mc_say "$3"
-   ;;
+    mc_say "$3"
+    ;;
+  create)
+    mc_create
+    ;;
  *)
   echo "Usage:"
   echo "minecraft {backup|start|stop|estop|restart|tail|render [Server]}"
