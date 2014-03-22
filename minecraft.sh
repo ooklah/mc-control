@@ -1,9 +1,5 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.2.1 2013-12-11
-# version 0.2.2 2013-10-16
-# version 0.2.1 2013-10-14
-# version 0.2.0 2013-09-23
 #
 #Requirements
 # screen;
@@ -20,9 +16,10 @@ USELOGGING=1
 RENDER_RESTART=0
 
 #Path Variables
-SERVERPATH="/home/$USER"
-BACKUPSPATH="$SERVERPATH/backups"
-LOGFILE="$SERVERPATH/log/minecraft_$MAP.log"
+SERVERPATH="/home/$USER/worlds"
+BACKUPSPATH="/home/$USER/www/minecraft/$MAP/backups"
+LOGFILE="/home/$USER/logs/minecraft_$MAP.log"
+MAPSPATH="/home/$USER/maps"
 
 #Variables
 SERVICE=$MAP"_server.jar"
@@ -174,27 +171,19 @@ mc_render(){
   mc_checkMap
   if mc_checkService
   then
-    log "Render: Starting Render Process"
-    mc_say "World Shutdown for Map Render in 30 Seconds..."
-    sleep 30
-    mc_command "stop"
-    sleep 10
-  else
-    log "Render: $SERVICE is not Running"
+    mc_say "Rendering the world."
   fi
 
   log "Render: Map Rendering Starting"
-  cd /home/minecraft/overviewer
+  cd $MAPSPATH
   overviewer.py --config=$MAP".py"
 
   log "Render: Generating Metadata"
   overviewer.py --genpoi --config=$MAP".py"
 
-  if [ RENDER_RESTART == 1 ]
+  if mc_checkService
   then
-    sleep 10
-    mc_start
-    log "Render: Restarting Map"
+    mc_say "Finished rendering the world."
   fi
 }
 
@@ -216,17 +205,16 @@ mc_backup(){
   #SAVE=`ls -d */`
   cd $SERVERPATH
   log "Backup: Beginning Zip Backup"
-  log "Backup: Path is ""$BACKUPSPATH/$MAP/$MAP""_""$DATE"
   # -x \*.jar works instead of -x \$DONOTARCHIVE or -x $DONOTARCHIVE="\*.jar"
   # I do not know why
-  zip -9 -r $BACKUPSPATH/$MAP/$MAP"_"$DATE $MAP -x \*.jar
+  zip -9 -r $BACKUPSPATH/$MAP"_"$DATE $MAP -x \*.jar
 
   if mc_checkService
   then
     mc_command "save-on"
     mc_say "World Backup Complete."
   fi
-
+  log "Backup: Path is ""$BACKUPSPATH/$MAP""_""$DATE"
   log "Backup: Zip Finished"
 }
 
@@ -247,7 +235,7 @@ mc_reboot(){
 
 # Used by mc_backup to get a size of the zip backup it just created.
 mc_backupSize(){
-  SIZE=`du -ch $BACKUPSPATH/$MAP/$MAP"_"$DATE".zip" | grep total`
+  SIZE=`du -ch $BACKUPSPATH/$MAP"_"$DATE".zip" | grep total`
   log "Info: Backup Zip is $SIZE"
 }
 
