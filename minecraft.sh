@@ -285,11 +285,14 @@ mc_create(){
   mkdir -p {$SERVERPATH/$MAP,$BACKUPSPATH,$WEBROOT/$MAP/map} 
 }
 
+mc_status(){
+  screen -ls | grep _screen | awk '{print $1}'
+}
 
 #Top Message, which server map we are working on.
 echo  "Minecraft Server MAP -> "$MAP
 
-#Start-Stop here
+#Start-Stop here  
 case "$1" in
   backup);&
   -b)
@@ -327,12 +330,16 @@ case "$1" in
   create)
     mc_create
     ;;
- *)
-  echo "Usage:"
-  echo "minecraft {backup|start|stop|estop|restart|tail|render [Server]}"
-  echo "minecraft {say|command [Server] 'command'}"
-  exit 1
-  ;;
+  status);&
+  -s)
+    mc_status
+    ;;
+  *)
+    echo "Usage:"
+    echo "minecraft {backup|start|stop|estop|restart|tail|render [Server]}"
+    echo "minecraft {say|command [Server] 'command'}"
+    exit 1
+    ;;
 
 esac
 
